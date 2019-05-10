@@ -21,3 +21,4 @@ ggplot(df.plot, aes(y = abundance, x = plotID)) +
   geom_errorbar(data=df.plot, aes(ymin = lci, ymax = uci)) +
   labs(title = "1991", x = "Est. abundance", y = "Plot")
 ggsave("./Plots/Plot1990.pdf")
+
