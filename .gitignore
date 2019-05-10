@@ -2,10 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-./data/
-./protocols/
-./communications/
-./admin/
-./resources/
-./incoming/
+data
+protocols/
+communications/
+admin/
+resources/
+incoming/
 .gitignore
