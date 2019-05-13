@@ -17,7 +17,7 @@ require(dplyr)
 # Load the dataset:
 source("./code/01_ImportFormat.R")
 df.list <- ImportFormat("./data/raw/SeabirdSurveyData.csv",
-                        "./data/derived/dat.Rdata")
+                        "./data/derived/df.list.Rdata")
 
 
 #-------------------------------------------------------------------------------
@@ -50,11 +50,121 @@ ggplot(df.list$df, aes(y = Nests, x = as.factor(Year))) +
   facet_wrap(~ Species, ncol = 1, scales = "free") +
   labs(x="Year", y="Nests")
 
+#-------------------------------------------------------------------------------
 
+## Plot total annual bird abundances and nests by Julian date
 
+# Total counts:
 df.list$df %>%
-  filter(Year==1990:2018) %>%
-ggplot(aes(y = Birds, x = as.factor(lubridate::month(as.Date(Date))))) +
-  geom_violin(na.rm=T) +
-  facet_wrap(~as.factor(Year)) +
-  labs(x="Date", y="Nests")
+  group_by(Julian, Year) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  ggplot() +
+  #geom_point(aes(y=Nests, x=Julian), col="blue") +
+  geom_point(aes(y=Birds, x=Julian)) +
+  stat_smooth(aes(y=Birds, x=Julian), method="lm") +
+  labs(title="Total Counts", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_counts_total.pdf")
+
+# Total nests:
+df.list$df %>%
+  group_by(Julian, Year) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  ggplot() +
+  #geom_point(aes(y=Nests, x=Julian), col="blue") +
+  geom_point(aes(y=Nests, x=Julian)) +
+  stat_smooth(aes(y=Nests, x=Julian), method="lm") +
+  labs(title="Total Nests", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_nests_total.pdf")
+
+# BLKI counts:
+df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species=="BLKI") %>%
+  ggplot() +
+  geom_point(aes(y=Birds, x=Julian)) +
+  stat_smooth(aes(y=Birds, x=Julian), method="lm") +
+  labs(title="Black-legged Kittiwake Counts", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_counts_blki.pdf")
+
+# COMU counts:
+df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species=="COMU") %>%
+  ggplot() +
+  geom_point(aes(y=Birds, x=Julian)) +
+  stat_smooth(aes(y=Birds, x=Julian), method="lm") +
+  labs(title="Common Murre Counts", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_counts_comu.pdf")
+
+# PECO counts:
+df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species=="PECO") %>%
+  ggplot() +
+  geom_point(aes(y=Birds, x=Julian)) +
+  stat_smooth(aes(y=Birds, x=Julian), method="lm") +
+  labs(title="Pacific Cormorant Counts", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_counts_peco.pdf")
+
+# BLKI nests:
+df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species=="BLKI") %>%
+  ggplot() +
+  geom_point(aes(y=Nests, x=Julian)) +
+  stat_smooth(aes(y=Nests, x=Julian), method="lm") +
+  labs(title="Black-legged Kittiwake Nests", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_nests_blki.pdf")
+
+# PECO nests:
+df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species=="PECO") %>%
+  ggplot() +
+  geom_point(aes(y=Nests, x=Julian)) +
+  stat_smooth(aes(y=Nests, x=Julian), method="lm") +
+  labs(title="Pacific Cormorant Nests", x="Julian day") +
+  scale_x_continuous(breaks=seq(150, 200, 25)) +
+  facet_wrap(~Year, scales="free_y")
+ggsave("./output/plots/julian_nests_peco.pdf")
+
+#-------------------------------------------------------------------------------
+## Scatterplots of Birds~Nest
+
+
+foo <- df.list$df %>%
+  group_by(Julian, Year, Species) %>%
+  summarise(Birds = sum(Birds, na.rm=T),
+            Nests = sum(Nests, na.rm=T)) %>%
+  subset(Species != "COMU")
+
+foo %>%
+ggplot(aes(x=Nests, y=Birds)) +
+  geom_point() +
+  stat_smooth(method="lm", se=FALSE) +
+  facet_wrap(~Species, scales="free")
+ggsave("./output/plots/scatter_birds_nests.pdf")

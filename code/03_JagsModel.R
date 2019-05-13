@@ -4,12 +4,12 @@
 # seabird and nest abundance                                                   #
 #                                                                              #
 # Author: McCrea Cobb <mccrea_cobb@fws.gov>                                    #  
-# Date modified: 6/27/2018                                                     #
+# Date modified: 5/10/2019                                                     #
 ################################################################################
 
 
 # Jags model file
-cat(file = "./code/jags/mod1.jags", "
+cat(file = "./code/jags/mod.jags", "
     model {
     
     ## Priors
@@ -18,8 +18,8 @@ cat(file = "./code/jags/mod1.jags", "
     tau.loglambda <- pow(sigma.loglambda, -2)
 
     for(i in 1:P){                              # For each plot (P),
-        mu.loglambda[i] ~ dunif(-100,100)         # Avg. log lambda is normally dist. around zero
-        N[i,1] ~ dunif(0,1)                  # Abundance at time 1 is a categorical dist, drawn from probs in psi
+        mu.loglambda[i] ~ dnrom(-100,100)         # Avg. log lambda is normally dist. around zero
+        N[i,1] ~ dcat(psi[,i)                  # Abundance at time 1 is a categorical dist, drawn from probs in psi
     } #i
 
     for(t in 1:T){                               # For each year (T),
@@ -27,8 +27,8 @@ cat(file = "./code/jags/mod1.jags", "
     } #t
 
     ## Population process model
-    for(i in 1:P){                               # For each plot,
-        for(t in 2:T){                             # For years 2 to 28,
+    for(i in 1:P){                               # For each plot (P):
+        for(t in 2:T){                             # For each year, from year 2 to T (29):
             loglambda[i,t-1] <- mu.loglambda[i]
             lambda[i,t-1] <- exp(loglambda[i,t-1])
             N[i,t] ~ dpois(N[i,t-1])
@@ -53,30 +53,37 @@ cat(file = "./code/jags/mod1.jags", "
 
 #-------------------------------------------------------------------------------
 
+##
+# Number of plots = 30
+# Number of years = 29
+# Number of reps/year = 12
+
+
 # Load packages:
 library(tidyverse)
 library(jagsUI)
 
+load("./data/derived/df.list.Rdata")
 df.jags <- df.list$df.jags
 
 ## Bundle data
 # Array of counts:
-C <- split(df.jags[, 4:15], as.factor(df.jags$Year))
-C <- array(as.numeric(unlist(C)), dim = c(nrow(C[[1]]), ncol(C[[1]]), length(C)))
+C <- split(df.jags[, 5:16], as.factor(df.jags$Year))  # Creates a list of dataframes, one for each year
+C <- array(as.numeric(unlist(C)), dim = c(nrow(C[[1]]), ncol(C[[1]]), length(C)))  # Converts the list to a 3-dimensional array (1:30 plots, 1:12 annual visits, 1:29 years)
 
-nplots <- length(unique(df.jags$PlotID))
-nreps <- ncol(df.jags[4:15])
-nyears <- length(unique(df.jags$Year))
+nplots <- length(unique(df.jags$PlotID))  # number of plot: 30
+nreps <- ncol(df.jags[4:15])              # number of revisits: 12
+nyears <- length(unique(df.jags$Year))    # number of years: 29
 
-# psi (for dcat distribution) based on the max value (count) in each row (plot) for each dimension (year)
-maxCyear1 <- apply(C, c(1,3), max, na.rm = T)[,1]  # Max count in year 1
-pi <- matrix(0, 400, nplots)                     # Empty 600x600 matrix
-for(i in 1:nplots){                               # Fill matrix with 
-  pi[1:(maxCyear1[i]-1), i] <- 0
-  pi[maxCyear1[i]:400, i] <- 1/(401-maxCyear1[i])
+# Calculate psi (for dcat distribution), based on the max value (count) in each row (plot) for each dimension (year)
+maxCyear1 <- apply(C, c(1,3), max, na.rm = T)[,1]   # Max counts/plot in year 1
+psi <- matrix(0, 400, nplots)                       # An empty 400x30 matrix
+for(i in 1:nplots){                                 # Fill that matrix with max counts
+  psi[1:(maxCyear1[i]-1), i] <- 0
+  psi[maxCyear1[i]:400, i] <- 1/(401-maxCyear1[i])
 }
 
-dat <- list(C = C, T = nyears, J = nreps, P = nplots, pi = pi)                                
+dat <- list(C = C, T = nyears, J = nreps, P = nplots, psi = psi)                                
 
 ## Initial values
 inits <- function() list(mu.loglambda = rep(0, 30),
@@ -93,7 +100,7 @@ pars <- c("N", "lambda", "p")
 ni <- 15000; nt <- 20; nb <- 5000; nc <- 1
 
 ## Call JAGS from R
-mod <- jags(dat, inits = inits, pars, "./code/jags/mod1.jags", 
+mod <- jags(dat, inits = inits, pars, "./code/jags/mod.jags", 
             n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb)
 
 

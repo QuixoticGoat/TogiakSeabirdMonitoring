@@ -28,12 +28,13 @@ ImportFormat <- function(inpath, outpath) {
   df$Birds <- as.numeric(df$Birds)
   df$Nests <- as.numeric(df$Nests)
   df$Yearn <- as.numeric(as.factor(df$Year))
+  df$Julian <- as.numeric(format(df$Date, "%j"))
 
-  # Creates a formatted dataframe for jags:
+  ## Creates a formatted dataframe for jags (df.jags):
   df.jags <- df %>% 
     filter(!is.na(Birds),             # Remove NAs from Birds
            Species == "BLKI") %>%     # Subset only BLKI
-    select(-one_of("Nests", "Replicate", "Species")) %>%             # Remove Nests
+    select(-one_of("Nests", "Replicate", "Species", "Julian")) %>%  # Remove Nests, Replicate, Species and Julian columns
     arrange(PlotID, Date) %>%         # Reorder by PlotID and Date
     group_by(PlotID, Year) %>%        # Group by PlotID and Date
     mutate(Counter = row_number()) %>%    # Add a column that counts replicates
@@ -42,16 +43,16 @@ ImportFormat <- function(inpath, outpath) {
   
   df.jags <- as.data.frame(df.jags)
   
-  Year <- rep(1990:2017, nlevels(df.jags$PlotID))
+  Year <- rep(min(df$Year):max(df$Year), nlevels(df.jags$PlotID))
   Year <- sort(Year)
-  PlotID <-  rep(levels(df.jags$PlotID), length(1990:2017))
+  PlotID <-  rep(levels(df.jags$PlotID), length(min(df$Year):max(df$Year)))
   joiner <- data.frame(PlotID, Year)
   df.jags <- full_join(df.jags, joiner)
   rm(Year, PlotID, joiner)
   
   # Replace NA counts with the annual mean (row mean):
-  foo <- df.jags[, 4:15]  # Select the count columns
-  k <- which(is.na(foo), arr.ind=TRUE)   # create an index of col/rows with NAs
+  foo <- df.jags[, 4:15]  # Select the columns with counts
+  k <- which(is.na(foo), arr.ind=TRUE)   # Create an index of col/rows with NAs
   foo[k] <- rowMeans(foo, na.rm=TRUE)[k[,1]]  # Fill in NAs with row means
   foo <- round(foo,0)  # round everything up
   df.jags <- cbind(df.jags[, 1:3], foo)  # add the new counts back into the df
@@ -72,7 +73,7 @@ ImportFormat <- function(inpath, outpath) {
   df.jags <- droplevels(df.jags)
   rm(selected)
   
-  # Creates a dataframe of annual mean values for plotting:
+  # Creates a dataframe of annual mean values for plotting (df.mean):
   df.mean <- df %>%
     group_by(Year, Species, Replicate) %>%
     summarise(B = sum(Birds, na.rm = T), 

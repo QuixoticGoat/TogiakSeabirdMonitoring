@@ -9,7 +9,7 @@
 
 
 # Jags model file
-cat(file = "./code/jags/mod1.jags", "
+cat(file = "./code/jags/mod.jags", "
     model {
     
     ## Priors
@@ -57,6 +57,10 @@ cat(file = "./code/jags/mod1.jags", "
 # Load packages:
 library(tidyverse)
 library(jagsUI)
+
+# Load the data:
+load("./data/derived/df.list.Rdata")
+df.jags <- df.list$df.jags
 
 ## Bundle data
 # Array of counts:

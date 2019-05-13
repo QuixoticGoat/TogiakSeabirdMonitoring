@@ -1,42 +1,16 @@
 
-    model {
+model { 
     
-    ## Priors
-    sigma.loglambda ~ dunif(0, 10)               # Variance on log lambda for pop process model
-    sigma2.loglambda <- pow(sigma.loglambda, 2)
-    tau.loglambda <- pow(sigma.loglambda, -2)
+    # Priors and constraints
+      lambda ~ dgamma(0.001, 0.001)
+      p ~ dunif(0,1)
 
-    for(i in 1:P){                              # For each plot (P),
-        mu.loglambda[i] ~ dnorm(0, 0.01)         # Avg. log lambda is normally dist. around zero
-        N[i,1] ~ dcat(pi[ ,i])                  # Abundance at time 1 is a categorical dist, drawn from probs in psi
-    } #i
-
-    for(t in 1:T){                               # For each year (T),
-        p[t] ~ dunif(0, 1)                       # Observation prob. is uniformly distributed between 0 and 1 
-    } #t
-
-    ## Population process model
-    for(i in 1:P){                               # For each plot,
-        for(t in 2:T){                             # For years 2 to 28,
-            eps.loglambda[i,t-1] ~ dnorm(0, tau.loglambda)        # Random site effects in log(abundance)
-            loglambda[i,t-1] <- mu.loglambda[i] + eps.loglambda[i,t-1]
-            lambda[i,t-1] <- exp(loglambda[i,t-1])
-            N[i,t] ~ dpois(N[i,t-1] * lambda[i,t-1])
-        } #t
-    } #i
-
-    ## Observation process model
-    for(i in 1:P){                                   # For each plot,
-        for(t in 1:T){                                # For each year,
-            for(j in 1:J){                             # For each rep,
-                C[i,j,t] ~ dbin(p[t],N[i,t])
-            } #j
-        } #t
-    } #i
-    
-    ## Derived parameters
-    for(i in 1:P){                                   # For each plot,
-        mu.lambda[i] <- exp(mu.loglambda[i])            derive mean lambda
-    } #i
+    # Likelihood
+      for (i in 1:M) {                 # State model
+        N[i] ~ dpois(lambda)
+        for (j in 1:J) {
+          C[i,j] ~ dbin(p, N[i])      # Observation model
+        }
+      }
     }
     
