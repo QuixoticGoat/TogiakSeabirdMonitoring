@@ -1,7 +1,7 @@
 ---
 title: "README"
 author: McCrea Cobb <mccrea_cobb@fws.gov>
-date: 5/13/2019
+date: 6/7/2018
 output: html_notebook
 editor_options: 
   chunk_output_type: inline
@@ -14,14 +14,10 @@ The abundance and reproductive success of black-legged kittiwakes, common murres
 
 **Contents**
 
-*./code/1_ImportFormat.R*  
-Imports a .csv file containg counts of seabirds and next by plot annually. Reformats data for plotting and analysis. Outputs the formatted data as a .RData file.  
+*./code*
 
-*./code/2_Plots.R*
-Creates summary plots of the data, including a lineplots and boxplots of annual seabird and nest abundance. 
+*./data*
 
-*./code/3_JagsModels.R*
-Runs n-mixture models to estimate bird abundances.
+*./output*
 
-*./code/4_JagsPlots.R*  
-Creates plots of output from n-mixture models.
+*./resources*
