@@ -16,7 +16,7 @@ require(dplyr)
 
 # Load the dataset:
 source("./code/01_ImportFormat.R")
-df.list <- ImportFormat("./data/raw/SeabirdSurveyData.csv",
+df.list <- ImportFormat("./data/raw/seabird_data.csv",
                         "./data/derived/df.list.Rdata")
 
 
@@ -37,18 +37,20 @@ df.list <- ImportFormat("./data/raw/SeabirdSurveyData.csv",
   scale_x_continuous("Year", breaks = seq(1990, 2017, by=5)))
 
 (p <- gridExtra::grid.arrange(p1, p2, nrow = 1))
-ggsave("./Plots/Trend.pdf", p)
+ggsave("./output/plots/annual_trend_lineSE.pdf", p)
 
 ## Boxplots
-ggplot(df.list$df, aes(y = Birds, x = as.factor(Year))) +
+(p1 <- ggplot(df.list$df, aes(y = Birds, x = as.factor(Year))) +
   geom_boxplot() +
   facet_wrap(~ Species, ncol = 1, scales = "free") +
-  labs(x="Year", y="Birds")
-  
-ggplot(df.list$df, aes(y = Nests, x = as.factor(Year))) +
+  scale_x_continuous("Year", breaks = seq(1990, 2017, by=5)) +
+  labs(x="Year", y="Birds"))
+p2 <- ggplot(df.list$df, aes(y = Nests, x = as.factor(Year))) +
   geom_boxplot(na.rm=T) +
   facet_wrap(~ Species, ncol = 1, scales = "free") +
   labs(x="Year", y="Nests")
+(p <- gridExtra::grid.arrange(p1, p2, nrow = 1))
+ggsave("./output/plots/annual_trend_boxplot.pdf", p)
 
 #-------------------------------------------------------------------------------
 
@@ -83,7 +85,7 @@ df.list$df %>%
 ggsave("./output/plots/julian_nests_total.pdf")
 
 # BLKI counts:
-df.list$df %>%
+foo <- df.list$df %>%
   group_by(Julian, Year, Species) %>%
   summarise(Birds = sum(Birds, na.rm=T),
             Nests = sum(Nests, na.rm=T)) %>%
